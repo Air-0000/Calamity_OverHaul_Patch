@@ -29,6 +29,11 @@ namespace Calamity_Overhaul_Patch.Content.Projectiles.Minions
         {
             Main.projFrames[Projectile.type] = 4; // 火焰小鬼是4帧动画
         }
+        public override void PostDraw(Color lightColor)
+        {
+            // 发光颜色：R, G, B, 透明度
+            Lighting.AddLight(Projectile.Center, 0.9f, 0.6f, 1.0f);
+        }
 
 
         // 召唤物AI（最简单的悬浮跟随）

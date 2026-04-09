@@ -23,7 +23,8 @@ namespace Calamity_OverHaul_Patch.Content.Items
             CreateRecipe()
                 .AddTile(TileID.WorkBenches)
                 .AddIngredient(ModContent.ItemType<RainbowCrystal>(), 1)
-                .AddIngredient(ItemID.StoneBlock, 10)
+                .AddIngredient(ItemID.IronBar, 10)
+                .AddRecipeGroup(RecipeGroupID.IronBar, 10)
                 .Register();
         }
     }

@@ -35,8 +35,7 @@ namespace Calamity_OverHaul_Patch.Content.Tiles
             // 合成站
             AdjTiles = new int[] { TileID.Anvils };
 
-            // ✅ 唯一正确防锤（官方存在）
-            TileID.Sets.PreventsTileHammeringIfOnTopOfIt[Type] = true;
+
         }
         // 发光效果
         public override void NearbyEffects(int i, int j, bool closer)

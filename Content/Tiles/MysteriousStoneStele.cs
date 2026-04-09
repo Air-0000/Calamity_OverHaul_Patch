@@ -1,7 +1,10 @@
 using Microsoft.Xna.Framework;
 using Terraria;
+using Terraria.DataStructures;
+using Terraria.Enums;
 using Terraria.ID;
 using Terraria.ModLoader;
+using Terraria.ObjectData;
 
 namespace Calamity_OverHaul_Patch.Content.Tiles
 {
@@ -14,9 +17,17 @@ namespace Calamity_OverHaul_Patch.Content.Tiles
             Main.tileMergeDirt[Type] = true;      // ✅ 与泥土融合：边缘会自动变成泥土纹理
             Main.tileBlockLight[Type] = true;     // 阻挡光线
             Main.tileLighted[Type] = true;        // 自身发光
+            Main.tileHammer[Type] = false;        // 防锤
 
             // 2. 地图显示
             AddMapEntry(new Color(100, 50, 150), CreateMapEntryName());
+
+
+            Main.tileFrameImportant[Type] = true;
+            TileObjectData.newTile.CopyFrom(TileObjectData.Style2x1);
+            TileObjectData.newTile.Origin = new Point16(0, 0);
+            TileObjectData.newTile.AnchorBottom = new AnchorData(AnchorType.SolidTile | AnchorType.SolidWithTop, 2, 0);
+            TileObjectData.addTile(Type);
 
             // 3. 核心：设置挖掘掉落
             // 告诉游戏：挖这个方块，掉落 RainbowCrystal 物品
@@ -25,7 +36,7 @@ namespace Calamity_OverHaul_Patch.Content.Tiles
             // 4. 可选：设置挖掘所需的最低镐力
             // 例如：需要 55% 镐力（金镐级别）才能挖
             // MineResist = 2f; // 挖掘阻力
-            // MinPick = 55;    // 最低镐力
+            MinPick = 55;    // 最低镐力
         }
 
         // 5. 可选：发光效果
