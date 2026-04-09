@@ -8,9 +8,11 @@ using Terraria.ModLoader;
 
 using static Calamity_OverHaul_Patch.Content.Items.GameStageHelper;
 using Calamity_Overhaul_Patch.Content.Projectiles.Minions;
+using UtfUnknown.Core.Models.MultiByte.Korean;
 
 namespace Calamity_OverHaul_Patch.Content.Items
 {
+    
     public class ShadowRainbowWhip : ModItem
     {   
         
@@ -24,8 +26,14 @@ namespace Calamity_OverHaul_Patch.Content.Items
 
         public override void ModifyWeaponDamage(Player player, ref StatModifier damage)
         {
-            Item.damage = ModContent.GetInstance<WhipDamage>().GetDamage(DamageTypeId: WhipAdvancedDamageHandler.BasicDamageTypeId);
+            GameStage stage = GetCurrentGameStage();
+            damage.Flat += WhipDamageCalculator.WhipDamage(
+                stage: (int)stage, 
+                DamageType: WhipDamageCalculator.BasicDamageTypeId,
+                basicDamage: Item.damage
+            );
         }
+
         // public override void UpdateInventory(Player player)
         // {
             
@@ -70,20 +78,24 @@ namespace Calamity_OverHaul_Patch.Content.Items
                 // 4. 检查：仆从位没满，才允许召唤
                 if (player.numMinions < player.maxMinions)
                 {
+                    int realDamage = WhipDamageCalculator.WhipDamage(
+                        stage: (int)GetCurrentGameStage(),
+                        DamageType: WhipDamageCalculator.SummonDamageTypeId,
+                        basicDamage: Item.damage);
                     // 5. 创建召唤物（安全、标准、多人兼容）
                     int proj = Projectile.NewProjectile(
                         player.GetSource_ItemUse(Item),  // 来源：物品使用（正确不报错）
                         player.Center,                   // 生成位置：玩家中心
                         Vector2.Zero,                    // 移动速度：静止生成
                         ModContent.ProjectileType<RainbowSummon>(), // 召唤物实体
-                        Item.damage,                    // 伤害
+                        realDamage,                  // 伤害
                         Item.knockBack,                 // 击退
                         player.whoAmI                   // 归属玩家
                     );
 
                     // 6. 必须设置：标记为仆从（吃鞭子、正确继承属性）
                     Main.projectile[proj].minion = true;
-                    Main.projectile[proj].originalDamage = Item.damage;
+                    Main.projectile[proj].originalDamage = realDamage;
                 }
             }
         }
@@ -92,25 +104,20 @@ namespace Calamity_OverHaul_Patch.Content.Items
 
     }
 
-        
-
-    public  class WhipDamage : DamageClass
+    public  class WhipDamage : DamageClass  
     {
-        public WhipAdvancedDamageHandler handler = new WhipAdvancedDamageHandler();
 
-        public  int GetDamage(int DamageTypeId = 0)
-        {
-            GameStage stage = GetCurrentGameStage();
-            return handler.WhipDamage((int)stage, DamageTypeId);
-        }
     }
-    public class WhipAdvancedDamageHandler : GlobalNPC
+
+    public class WhipDamageCalculator // 伤害计算类
     {
-        // Damage Type Id 
         public const int BasicDamageTypeId = 0;
         public const int AdvancedDamageTypeId = 1;
-        public  int WhipDamage(int stage,int DamageType,int basicDamage = 10)
-        {
+        public const int SummonDamageTypeId = 2;
+
+        public static int WhipDamage(int stage,int DamageType,int basicDamage = 10)
+        {       
+            
             if (DamageType == BasicDamageTypeId)
             {
                 if (stage < (int)GameStage.HardModePrePlantera) 
@@ -125,34 +132,45 @@ namespace Calamity_OverHaul_Patch.Content.Items
                 }
                 return (int)((basicDamage+1) * ( stage * 0.8f * (stage-6) ));
             }
-            else if (stage >= (int)GameStage.PostMoonLord)
+            else if(DamageType == AdvancedDamageTypeId)
             {
-                return basicDamage + (stage - 10)*5;
+                if (stage >= (int)GameStage.PostMoonLord)
+                {
+                    return basicDamage + (stage - 10)*5;
+                }
+            }
+            else if (DamageType == SummonDamageTypeId)
+            {
+                if (stage < (int)GameStage.HardModePrePlantera) 
+                {
+                    return (int)(basicDamage * (1f + Math.Log(stage + 1)) * 0.5f);
+                    
+                }
+                if (stage < (int)GameStage.PostPlantera) 
+                {
+                    return (int)(basicDamage * ( stage * 0.8f * (stage-6) ));
+                    
+                }
+                return (int)((basicDamage+1) * ( stage * 0.8f * (stage-6) ));
             }
             return 0;
             
         }
-        
+    }
+
+    public class WhipAdvancedDamageHandler : GlobalNPC // 额外伤害buff处理 
+    {
         public override void ModifyHitByProjectile(NPC npc, Projectile projectile, ref NPC.HitModifiers modifiers)
         {
             // 1. 检查击中者是不是召唤物 (Minion)
-            if (projectile.minion)
+            if (projectile.minion && npc.HasBuff(BuffID.RainbowWhipNPCDebuff))
             {
-                // 2. 检查 NPC 身上有没有原版 Buff (比如万花筒)
-                if (npc.HasBuff(BuffID.RainbowWhipNPCDebuff))
-                {
-                    // 3. 修改伤害 (直接修改 modifiers)
-                    // 方案 A: 增加固定数值 (比如 +100)
-                    modifiers.FlatBonusDamage += WhipDamage(stage: (int)GetCurrentGameStage(), DamageType: AdvancedDamageTypeId ); 
-
-                }
+                modifiers.FlatBonusDamage += 
+                WhipDamageCalculator.WhipDamage(
+                    stage: (int)GetCurrentGameStage(), 
+                    DamageType: WhipDamageCalculator.AdvancedDamageTypeId); 
             }
         }
-
     }
-
-    
-
-    
 
 }

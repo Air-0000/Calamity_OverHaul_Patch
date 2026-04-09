@@ -10,13 +10,14 @@ using Terraria.Enums;
 namespace Calamity_OverHaul_Patch.Content.Tiles
 {
     public class ShadowAnvil : ModTile
-    {
+    {   
+        public override bool Slope(int i, int j) => false;
         public override void SetStaticDefaults()
         {
             // 基础属性
             Main.tileSolid[Type] = true;
             Main.tileSolidTop[Type] = true;
-
+            Main.tileHammer[Type] = false; 
             Main.tileBlockLight[Type] = true;
             Main.tileLighted[Type] = false;
             TileID.Sets.IgnoredByNpcStepUp[Type] = true;

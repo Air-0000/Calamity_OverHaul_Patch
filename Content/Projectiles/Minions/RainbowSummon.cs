@@ -6,7 +6,7 @@ using static Calamity_OverHaul_Patch.Content.Items.GameStageHelper;
 
 namespace Calamity_Overhaul_Patch.Content.Projectiles.Minions
 {
-    public class Summonofrainbow : ModProjectile
+    public class RainbowSummon : ModProjectile
     {
         // 召唤物基础设置
         public override void SetDefaults()
@@ -136,7 +136,7 @@ namespace Calamity_Overhaul_Patch.Content.Projectiles.Minions
                         Projectile.GetSource_FromAI(),
                         Projectile.Center,
                         vel,
-                        207, 
+                        ProjectileID.CrystalPulse, 
                         Projectile.damage,
                         Projectile.knockBack,
                         player.whoAmI
