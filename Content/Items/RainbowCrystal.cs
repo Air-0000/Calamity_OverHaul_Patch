@@ -9,6 +9,7 @@ namespace Calamity_OverHaul_Patch.Content.Items
         public override void SetDefaults()
         {
             Item.CloneDefaults(ItemID.Diamond);
+            Item.DefaultToPlaceableTile(ModContent.TileType<Content.Tiles.RainbowCrystalTile>());
         }
     }
 }

@@ -25,6 +25,11 @@ Items: {
 		DisplayName: Shadow Anvil
 		Tooltip: ""
 	}
+
+	MysteriousStoneStele: {
+		DisplayName: Mysterious Stone Stele
+		Tooltip: ""
+	}
 }
 
 DamageClasses.WhipDamage.DisplayName: Whip Damage
