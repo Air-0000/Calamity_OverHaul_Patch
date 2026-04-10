@@ -15,15 +15,15 @@ namespace Calamity_OverHaul_Patch.Content.Tiles
         public override void SetStaticDefaults()
         {
             // 基础属性
-            Main.tileSolid[Type] = true;
+            Main.tileTable[Type] = true;
             Main.tileSolidTop[Type] = true;
+            Main.tileNoAttach[Type] = true; // ✅ 关键：不让方块附着在上面
+            Main.tileLavaDeath[Type] = true;
             Main.tileHammer[Type] = false; 
             Main.tileBlockLight[Type] = true;
             Main.tileLighted[Type] = false;
-            Main.tileNoAttach[Type] = true; // ✅ 关键：不让方块附着在上面
             TileID.Sets.IgnoredByNpcStepUp[Type] = true;
-
-            Main.tileLavaDeath[Type] = false;      // 无所谓，保持默认
+            TileID.Sets.DisableSmartCursor[Type] = true;
 
             // 本地化名称
             AddMapEntry(new Color(100, 50, 150), CreateMapEntryName());
