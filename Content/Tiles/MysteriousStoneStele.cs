@@ -17,7 +17,6 @@ namespace Calamity_OverHaul_Patch.Content.Tiles
         {
 
             // 1. 基础方块属性（可挖、不透明、不挡光、可 smart 交互）
-            Main.tileSolid[Type] = true;
             Main.tileSolidTop[Type] = false; // 顶部不是实心（可站）
             Main.tileBlockLight[Type] = false; // 不挡光
             Main.tileNoSunLight[Type] = false;
@@ -42,7 +41,7 @@ namespace Calamity_OverHaul_Patch.Content.Tiles
             TileObjectData.newTile.StyleWrapLimit = 1;
             TileObjectData.newTile.LavaDeath = false;
             TileObjectData.newTile.AnchorBottom = new AnchorData(AnchorType.SolidTile | AnchorType.SolidWithTop, TileObjectData.newTile.Width, 0); // 底部必须贴实心方块
-            TileObjectData.newTile.AnchorInvalidTiles = new int[] { TileID.Torches }; // 不能放火把上
+            // TileObjectData.newTile.AnchorInvalidTiles = new int[] { 19, 427, 435, 436, 437, 438, 439 }; // 不能放平台上
 
 
             // 注册结构到游戏

@@ -15,34 +15,28 @@ namespace Calamity_OverHaul_Patch.Content.Tiles
         public override void SetStaticDefaults()
         {
             // 基础属性
-            Main.tileSolid[Type] = true;
             Main.tileSolidTop[Type] = true;
             Main.tileHammer[Type] = false; 
             Main.tileBlockLight[Type] = true;
             Main.tileLighted[Type] = false;
             Main.tileNoAttach[Type] = true; // ✅ 关键：不让方块附着在上面
             TileID.Sets.IgnoredByNpcStepUp[Type] = true;
-
+            Main.tileTable[Type] = true;
             Main.tileLavaDeath[Type] = false;      // 无所谓，保持默认
+			AdjTiles = [TileID.WorkBenches];
+
+			// Placement
+            Main.tileFrameImportant[Type] = true;
+			TileObjectData.newTile.CopyFrom(TileObjectData.Style2x1);
+			TileObjectData.newTile.CoordinateHeights = [18];
+			TileObjectData.addTile(Type);
+
+			AddToArray(ref TileID.Sets.RoomNeeds.CountsAsTable);
 
             // 本地化名称
             AddMapEntry(new Color(100, 50, 150), CreateMapEntryName());
-
-            // 2x1 结构
-            Main.tileFrameImportant[Type] = true;
-            TileObjectData.newTile.CopyFrom(TileObjectData.Style2x1);
-            TileObjectData.newTile.Origin = new Point16(0, 0);
-            TileObjectData.newTile.AnchorBottom = new AnchorData(AnchorType.SolidTile | AnchorType.SolidWithTop, 2, 0);
-            TileObjectData.addTile(Type);
-
-            // 合成站
-            AdjTiles = new int[] { TileID.Anvils };
-
-
         }
-        //11111
-        // 发光效果
-        public override void NearbyEffects(int i, int j, bool closer)
+        public override void NearbyEffects(int i, int j, bool closer)  // 发光效果
         {
             if (closer && Main.rand.NextBool(10))
             {
