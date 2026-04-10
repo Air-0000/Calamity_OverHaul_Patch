@@ -1,52 +1,91 @@
 using Microsoft.Xna.Framework;
 using Terraria;
+using Terraria.Audio;
 using Terraria.DataStructures;
 using Terraria.Enums;
+using Terraria.GameContent.ObjectInteractions;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ObjectData;
 
-namespace Calamity_OverHaul_Patch.Content.Tiles
-{
+namespace Calamity_OverHaul_Patch.Content.Tiles 
+{ 
+
     public class MysteriousStoneStele : ModTile
     {
         public override void SetStaticDefaults()
         {
-            // 1. 基础属性：定义它为实心背景块
-            Main.tileSolid[Type] = true;          // ✅ 实心：可以站人，可以挡水
-            Main.tileMergeDirt[Type] = true;      // ✅ 与泥土融合：边缘会自动变成泥土纹理
-            Main.tileBlockLight[Type] = true;     // 阻挡光线
-            Main.tileLighted[Type] = true;        // 自身发光
-            Main.tileHammer[Type] = false;        // 防锤
 
-            // 2. 地图显示
-            AddMapEntry(new Color(100, 50, 150), CreateMapEntryName());
+            // 1. 基础方块属性（可挖、不透明、不挡光、可 smart 交互）
+            Main.tileSolid[Type] = true;
+            Main.tileSolidTop[Type] = false; // 顶部不是实心（可站）
+            Main.tileBlockLight[Type] = false; // 不挡光
+            Main.tileNoSunLight[Type] = false;
+            Main.tileLighted[Type] = false;
 
+            Main.tileMergeDirt[Type] = false;
+            Main.tileSpelunker[Type] = false;
 
+            // 整体化
             Main.tileFrameImportant[Type] = true;
-            TileObjectData.newTile.CopyFrom(TileObjectData.Style2x1);
-            TileObjectData.newTile.Origin = new Point16(0, 0);
-            TileObjectData.newTile.AnchorBottom = new AnchorData(AnchorType.SolidTile | AnchorType.SolidWithTop, 2, 0);
+
+            // 2. 核心：TileObjectData 定义 2×3 结构（最关键部分）
+            TileObjectData.newTile.CopyFrom(TileObjectData.Style1x1); // 从1格模板复制，再改
+            TileObjectData.newTile.Width = 2;       // 横向占2格（X轴）
+            TileObjectData.newTile.Height = 3;      // 纵向占3格（Y轴）
+            TileObjectData.newTile.Origin = new Point16(1, 2); // 原点：第2列(X=1)、第3行(Y=2)（底部中间）
+            TileObjectData.newTile.CoordinateWidth = 16;       // 单格贴图宽度（像素）
+            TileObjectData.newTile.CoordinateHeights = [16, 16, 16];      // 单格贴图高度（像素）
+            TileObjectData.newTile.CoordinatePadding = 2;     // 帧之间的间距（像素，默认2）
+            TileObjectData.newTile.StyleHorizontal = true;      // 多格帧**横向排布**（贴图从左到右切）
+            TileObjectData.newTile.StyleMultiplier = 1;        // 风格数量（1种就1）
+            TileObjectData.newTile.StyleWrapLimit = 1;
+            TileObjectData.newTile.LavaDeath = false;
+            TileObjectData.newTile.AnchorBottom = new AnchorData(AnchorType.SolidTile | AnchorType.SolidWithTop, TileObjectData.newTile.Width, 0); // 底部必须贴实心方块
+            TileObjectData.newTile.AnchorInvalidTiles = new int[] { TileID.Torches }; // 不能放火把上
+
+
+            // 注册结构到游戏
             TileObjectData.addTile(Type);
 
-            // 3. 核心：设置挖掘掉落
-            // 告诉游戏：挖这个方块，掉落 RainbowCrystal 物品
-            RegisterItemDrop(ModContent.ItemType<Items.RainbowCrystal>());
-            
-            // 4. 可选：设置挖掘所需的最低镐力
-            // 例如：需要 55% 镐力（金镐级别）才能挖
-            // MineResist = 2f; // 挖掘阻力
-            MinPick = 55;    // 最低镐力
+            // 3. 其他：地图显示、掉落、交互
+            AddMapEntry(new Color(200, 180, 160), CreateMapEntryName()); // 地图颜色+名称
+            //RegisterItemDrop(ModContent.ItemType<Content.Items.RainbowCrystal>()); // (!!多格不可用)挖掉掉落对应物品
+            //AdjTiles = new int[] { TileID.Statues }; // (会覆盖掉落!!)归类为雕像
         }
 
-        // 5. 可选：发光效果
-        public override void NearbyEffects(int i, int j, bool closer)
+        public override void KillMultiTile(int i, int j, int frameX, int frameY)
         {
-            if (closer && Main.rand.NextBool(5))
-            {
-                // 产生紫色粒子
-                Dust.NewDust(new Vector2(i * 16, j * 16), 16, 16, DustID.PurpleTorch);
-            }
+            Item.NewItem(
+                new EntitySource_TileBreak(i, j),  // 掉落来源（必须写，防报错）
+                i * 16,                            // X 坐标
+                j * 16,                            // Y 坐标
+                32,                                // 宽度
+                48,                                // 高度
+                ModContent.ItemType<Content.Items.RainbowCrystal>()  // 你要掉的物品
+            );
         }
+
+        // 可选：自定义放置条件（比如只能放实心地面、不能重叠）
+        public override bool CanPlace(int i, int j)
+        {
+            for (int x = 0; x < 2; x++)
+            {
+                for (int y = 0; y < 3; y++)
+                {
+                    Tile tile = Framing.GetTileSafely(i + x, j - y);
+                    if (tile.HasTile) return false;
+                }
+            }
+            return true;
+        }
+
+        // 放置后调用（官方方法）
+        public override void PlaceInWorld(int i, int j, Item item)
+        {
+            SoundEngine.PlaySound(SoundID.Dig, new Vector2(i * 16, j * 16));
+        }
+
     }
+
 }

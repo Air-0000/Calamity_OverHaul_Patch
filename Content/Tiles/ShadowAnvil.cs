@@ -20,7 +20,10 @@ namespace Calamity_OverHaul_Patch.Content.Tiles
             Main.tileHammer[Type] = false; 
             Main.tileBlockLight[Type] = true;
             Main.tileLighted[Type] = false;
+            Main.tileNoAttach[Type] = true; // ✅ 关键：不让方块附着在上面
             TileID.Sets.IgnoredByNpcStepUp[Type] = true;
+
+            Main.tileLavaDeath[Type] = false;      // 无所谓，保持默认
 
             // 本地化名称
             AddMapEntry(new Color(100, 50, 150), CreateMapEntryName());
