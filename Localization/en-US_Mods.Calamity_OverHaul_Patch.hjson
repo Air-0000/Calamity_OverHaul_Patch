@@ -38,6 +38,7 @@ Tiles: {
 	RainbowCrystal.MapEntry: Rainbow Crystal
 	MysteriousStoneStele.MapEntry: Mysterious Stone Stele
 	ShadowAnvil.MapEntry: Shadow Anvil
+	RainbowCrystalTile.MapEntry: Rainbow Crystal Tile
 }
 
 Projectiles.RainbowSummon.DisplayName: RainbowSummon

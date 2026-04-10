@@ -29,6 +29,8 @@ namespace Calamity_OverHaul_Patch.Content.Tiles
             // 整体化
             Main.tileFrameImportant[Type] = true;
 
+            TileID.Sets.GeneralPlacementTiles[Type] = false;
+
             // 2. 核心：TileObjectData 定义 2×3 结构（最关键部分）
             TileObjectData.newTile.CopyFrom(TileObjectData.Style1x1); // 从1格模板复制，再改
             TileObjectData.newTile.Width = 2;       // 横向占2格（X轴）
