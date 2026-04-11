@@ -50,12 +50,8 @@ namespace Light_and_Shadow.Content.Items
             CreateRecipe()
                 .AddTile(ModContent.TileType<Tiles.ShadowAnvil>())
                 .AddIngredient(ModContent.ItemType<RainbowCrystal>(), 1)
-                .AddIngredient(ItemID.Amber, 5)
-                .AddIngredient(ItemID.Ruby, 5)
-                .AddIngredient(ItemID.Topaz, 5)
-                .AddIngredient(ItemID.Amethyst, 5)
-                .AddIngredient(ItemID.Sapphire, 5)
-                .AddIngredient(ItemID.Emerald, 5)
+                .AddIngredient(ModContent.ItemType<ShadowCrystal>(), 6)
+                .AddIngredient(ModContent.ItemType<LightCrystal>(), 6)
                 .Register();
         }
         /// <summary>
