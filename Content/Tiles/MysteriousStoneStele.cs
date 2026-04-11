@@ -62,7 +62,7 @@ namespace Light_and_Shadow.Content.Tiles
         public override IEnumerable<Item> GetItemDrops(int i, int j)
         {
             // 直接返回要掉落的物品，支持多物品、概率掉落
-            yield return new Item(ModContent.ItemType<Items.RainbowCrystal>());
+            yield return new Item(ModContent.ItemType<Items.MysteriousStone>());
         }
 
         // 可选：自定义放置条件（比如只能放实心地面、不能重叠）

@@ -22,7 +22,7 @@ namespace Light_and_Shadow.Content.Items
         {
             CreateRecipe()
                 .AddTile(TileID.WorkBenches)
-                .AddIngredient(ModContent.ItemType<RainbowCrystal>(), 1)
+                .AddIngredient(ModContent.ItemType<MysteriousStone>(), 1)
                 .AddRecipeGroup(RecipeGroupID.IronBar, 10)
                 .Register();
         }
