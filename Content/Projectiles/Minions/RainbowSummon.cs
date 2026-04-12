@@ -49,7 +49,7 @@ namespace Light_and_Shadow.Content.Projectiles.Minions
                 return;
             }
 
-            bool holdingShadowRainbowWhip = player.HeldItem.ModItem is Content.Items.ShadowRainbowWhip;
+            bool holdingShadowRainbowWhip = player.HeldItem.ModItem is Content.Items.Weapons.ShadowRainbowWhip;
 
             if (!holdingShadowRainbowWhip)
             {
@@ -66,14 +66,14 @@ namespace Light_and_Shadow.Content.Projectiles.Minions
             bool canWallDetect = false;    // 索敌是否穿墙
             bool canPenetrateWall; // 射弹是否穿墙
 
-            if ( (int)stage < 6  )
+            if (  stage < GameStage.HardModePrePlantera )
             {
                 detectRange = 350f;
                 attackCooldown = 45;
                 canWallDetect = false;    // 肉前 ❌ 不能穿墙索敌
                 canPenetrateWall = false; // 肉前 ❌ 射弹不能穿墙
             }
-            else if (stage == GameStage.HardModePrePlantera)
+            else if (stage < GameStage.PostPlantera )
             {
                 detectRange = 550f;
                 attackCooldown = 32;
@@ -118,7 +118,7 @@ namespace Light_and_Shadow.Content.Projectiles.Minions
                 BuffID.FlameWhipEnemyDebuff,    // 313
                 BuffID.ThornWhipNPCDebuff,      // 315
                 BuffID.RainbowWhipNPCDebuff,    // 316
-                BuffID.MaceWhipNPCDebuff,       // 319
+                BuffID.MaceWhipNPCDebuff,       // 319      
                 BuffID.BoneWhipNPCDebuff,       // 326
                 BuffID.CoolWhipNPCDebuff        // 340
             };

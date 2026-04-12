@@ -19,6 +19,7 @@ namespace Light_and_Shadow.Content.Items
             PostMechanicalBoss, // 机械后 55
             PostPlantera,   // 花后 160
             PostGolem,      // 石巨人后
+            PostFishron,     // 猪鱼后
             PostMoonLord    // 月总后（毕业）
         }
 
@@ -26,6 +27,9 @@ namespace Light_and_Shadow.Content.Items
         {
             if (NPC.downedMoonlord)
                 return GameStage.PostMoonLord;
+
+            if (NPC.downedFishron)
+                return GameStage.PostFishron;
             
             if (NPC.downedGolemBoss)
                 return GameStage.PostGolem;

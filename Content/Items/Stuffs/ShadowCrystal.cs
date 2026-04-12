@@ -2,9 +2,9 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace Light_and_Shadow.Content.Items
+namespace Light_and_Shadow.Content.Items.Stuffs
 {
-    public class MysteriousStone : ModItem
+    public class ShadowCrystal : ModItem
     {   
         public override void SetDefaults()
         {

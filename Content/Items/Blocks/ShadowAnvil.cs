@@ -1,8 +1,9 @@
 ﻿using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
+using Light_and_Shadow.Content.Items.Stuffs;
 
-namespace Light_and_Shadow.Content.Items
+namespace Light_and_Shadow.Content.Items.Blocks
 {
     public class ShadowAnvil : ModItem
     {
