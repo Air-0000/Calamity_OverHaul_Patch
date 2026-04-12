@@ -61,4 +61,6 @@ Tiles: {
 Projectiles: {
 	RainbowSummon.DisplayName: RainbowSummon
 	ShadowRainbowWhip.DisplayName: Shadow Rainbow Whip
+	ShadowRainbowWhipProjectile.DisplayName: Shadow Rainbow Whip Projectile
+	ShadowRainbowWhipProj.DisplayName: Shadow Rainbow Whip Proj
 }

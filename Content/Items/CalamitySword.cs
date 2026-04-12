@@ -9,24 +9,28 @@ namespace Light_and_Shadow.Content.Items
 	// https://github.com/tModLoader/tModLoader/tree/stable/ExampleMod
 	public class CalamitySword : ModItem
 	{
-		// The Display Name and Tooltip of this item can be edited in the 'Localization/en-US_Mods.Light_and_Shadow.hjson' file.
-		public override void SetDefaults()
-		{
-			Item.damage = 50;
-			Item.DamageType = DamageClass.Melee;
-			Item.width = 40;
-			Item.height = 40;
-			Item.useTime = 20;
-			Item.useAnimation = 20;
-			Item.useStyle = ItemUseStyleID.Swing;
-			Item.knockBack = 6;
-			Item.value = Item.buyPrice(silver: 1);
-			Item.rare = ItemRarityID.Blue;
-			Item.UseSound = SoundID.Item1;
-			Item.autoReuse = true;
-		}
+        // The Display Name and Tooltip of this item can be edited in the 'Localization/en-US_Mods.Light_and_Shadow.hjson' file.
+        public override void SetDefaults()
+        {
+            Item.width = 1000;
+            Item.height = 400;
+            Item.useTime = 100;
+            Item.useAnimation = 200;
+            Item.useStyle = ItemUseStyleID.Swing;
 
-		public override void AddRecipes()
+            // 鞭子必备两行
+            Item.noMelee = true;
+            Item.noUseGraphic = true;
+
+            // 直接射原版彩虹鞭子，测试是否能发射
+            Item.shoot = ProjectileID.RainbowWhip;
+            Item.shootSpeed = 1f;
+
+            Item.DamageType = DamageClass.SummonMeleeSpeed;
+            Item.autoReuse = true;
+        }
+
+        public override void AddRecipes()
 		{
 			Recipe recipe = CreateRecipe();
 			recipe.AddIngredient(ItemID.DirtBlock, 10);

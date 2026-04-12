@@ -1,14 +1,14 @@
-using System;
+using Light_and_Shadow.Content.Projectiles.Minions;
+using Light_and_Shadow.Content.Projectiles.Whip;
 using Microsoft.Xna.Framework;
+using System;
 using System.Runtime.InteropServices;
 using Terraria;
 using Terraria.GameContent.Events;
 using Terraria.ID;
 using Terraria.ModLoader;
-
-using static Light_and_Shadow.Content.Items.GameStageHelper;
-using Light_and_Shadow.Content.Projectiles.Minions;
 using UtfUnknown.Core.Models.MultiByte.Korean;
+using static Light_and_Shadow.Content.Items.GameStageHelper;
 
 namespace Light_and_Shadow.Content.Items
 {
@@ -18,13 +18,44 @@ namespace Light_and_Shadow.Content.Items
         
         public override void SetDefaults()
         {
-            Item.CloneDefaults(ItemID.RainbowWhip);
-            Item.shoot = ModContent.ProjectileType<Content.Projectiles.Whip.ShadowRainbowWhip>();  // ✅ 应该发射你自己的
-            Item.damage = 10;
+            Item.width = 30;
+            Item.height = 30;
+            Item.scale = 1f; // 默认缩放1倍（正常大小）
+
+            Item.damage = 10; 
+            Item.knockBack = 2f;
+            Item.useTime = 40;
+            Item.useAnimation = 40;
             Item.useStyle = ItemUseStyleID.Swing;
+            Item.UseSound = SoundID.Item152;
+            Item.autoReuse = true;
+
+            Item.noMelee = true;
+            Item.noUseGraphic = true;
+
+            Item.shoot = ProjectileID.RainbowWhip;  // ✅ 应该发射你自己的
+            Item.shootSpeed = 0.5f;
+   
+            Item.DamageType = DamageClass.SummonMeleeSpeed;
         }
 
-        public override void ModifyWeaponDamage(Player player, ref StatModifier damage)
+        public override void ModifyShootStats(Player player, ref Vector2 position, ref Vector2 velocity, ref int type, ref int damage, ref float knockback)
+        {
+            // 这里动态改 shootSpeed 对应的 velocity
+            // 例如：根据玩家状态改变鞭子射出速度
+
+            if (player.statLife > player.statLifeMax2 * 0.5f)
+            {
+                velocity *= 7f; // 速度变 1.5 倍
+            }
+            else
+            {
+                velocity *= 1.0f; // 正常速度
+            }
+        }
+        
+
+        public override void ModifyWeaponDamage(Player player, ref StatModifier damage) 
         {
             GameStage stage = GetCurrentGameStage();
             damage.Flat += WhipDamageCalculator.WhipDamage(
