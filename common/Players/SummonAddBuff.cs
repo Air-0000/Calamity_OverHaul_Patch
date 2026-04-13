@@ -1,7 +1,7 @@
 ﻿using Terraria;
 using Terraria.ModLoader;
 
-namespace Light_and_Shadow.common.Players // 改成你的MOD名
+namespace Light_and_Shadow.Common.Players // 改成你的MOD名
 {
     public class SummonStagePlayer : ModPlayer
     {
