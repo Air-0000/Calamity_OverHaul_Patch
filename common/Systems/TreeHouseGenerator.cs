@@ -94,67 +94,79 @@ namespace Light_and_Shadow.Common.Systems
         private void LoadStructureData()
         {
             if (isDataLoaded) return;
-
-            // 路径配置 (开发环境)
-            string path = Path.Combine(Main.SavePath, "tModLoader", "..", "ModSources", Mod.Name, "Structure", "TreeHouse.qotstruct");
-            path = Path.GetFullPath(path);
-
-            if (!File.Exists(path))
-            {
-                Mod.Logger.Warn($"⚠️ 结构文件未找到: {path}");
-                return;
-            }
-
             try
             {
-                TagCompound tag = TagIO.FromFile(path);
-                
-                // 获取尺寸信息
-                structureWidth = tag.Get<short>("Width");
-                structureHeight = tag.Get<short>("Height");
-                int originX = tag.Get<short>("OriginX");
-                int originY = tag.Get<short>("OriginY");
+                // 路径配置 (开发环境)
+                string myDocuments = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                // 拼接完整路径：我的文档/My Games/Terraria/tModLoader/ModSources/你的Mod/Structure/文件
+                string structureFilePath = Path.Combine(
+                    myDocuments,
+                    "My Games",
+                    "Terraria",
+                    "tModLoader",
+                    "ModSources",
+                    Mod.Name,
+                    "Structure",
+                    "TreeHouse1.qotstruct"
+                );
+                string fullPath = Path.GetFullPath(structureFilePath);
 
-                Mod.Logger.Info($"📐 读取尺寸: {structureWidth}x{structureHeight}, 原点: {originX},{originY}");
-
-                if (tag.TryGet("StructureData", out object structureObj) && structureObj is System.Collections.IList dataList)
+                if (!File.Exists(fullPath))
                 {
-                    Mod.Logger.Info($"🧱 开始解析 {dataList.Count} 个数据项...");
+                    Mod.Logger.Warn($"⚠️ 结构文件未找到: {fullPath}");
+                    return;
+                }
 
-                    for (int index = 0; index < dataList.Count; index++)
+               
+                    TagCompound tag = TagIO.FromFile(fullPath);
+
+                    // 获取尺寸信息
+                    structureWidth = tag.Get<short>("Width");
+                    structureHeight = tag.Get<short>("Height");
+                    int originX = tag.Get<short>("OriginX");
+                    int originY = tag.Get<short>("OriginY");
+
+                    Mod.Logger.Info($"📐 读取尺寸: {structureWidth}x{structureHeight}, 原点: {originX},{originY}");
+
+                    if (tag.TryGet("StructureData", out object structureObj) && structureObj is System.Collections.IList dataList)
                     {
-                        if (dataList[index] is TagCompound tileTag)
+                        Mod.Logger.Info($"🧱 开始解析 {dataList.Count} 个数据项...");
+
+                        for (int index = 0; index < dataList.Count; index++)
                         {
-                            TileDefinition def = TileDefinition.DeserializeData(tileTag);
-
-                            if (def.TileIndex != -1)
+                            if (dataList[index] is TagCompound tileTag)
                             {
-                                // --- 计算相对坐标 ---
-                                // 这里计算的是相对于建筑原点的偏移量
-                                int x = index % (structureWidth + 1); 
-                                int y = index / (structureWidth + 1);
+                                TileDefinition def = TileDefinition.DeserializeData(tileTag);
 
-                                int relativeX = x - originX;
-                                int relativeY = y - originY;
+                                if (def.TileIndex != -1)
+                                {
+                                    // --- 计算相对坐标 ---
+                                    // 这里计算的是相对于建筑原点的偏移量
+                                    int x = index % (structureWidth + 1);
+                                    int y = index / (structureWidth + 1);
+
+                                    int relativeX = x - originX;
+                                    int relativeY = y - originY;
 
                                 // 存入相对位置，而不是绝对位置
-                                tileRelativePositions.Add(new Point16((short)relativeX, (short)relativeY));
-                                tileTypes.Add((ushort)def.TileIndex);
-                                wallTypes.Add((ushort)def.WallIndex);
-                                frameXs.Add(def.TileFrameX);
-                                frameYs.Add(def.TileFrameY);
+                                    tileRelativePositions.Add(new Point16((short)relativeX, (short)relativeY));
+                                    tileTypes.Add((ushort)def.TileIndex);
+                                    wallTypes.Add((ushort)def.WallIndex);
+                                    frameXs.Add(def.TileFrameX);
+                                    frameYs.Add(def.TileFrameY);
+                                }
                             }
                         }
+                        isDataLoaded = true;
+                        Mod.Logger.Info($"✅ 成功加载 {tileRelativePositions.Count} 个方块！");
                     }
-                    isDataLoaded = true;
-                    Mod.Logger.Info($"✅ 成功加载 {tileRelativePositions.Count} 个方块！");
-                }
             }
             catch (Exception e)
             {
                 Mod.Logger.Error($"❌ 加载结构数据失败: {e.Message}");
                 Mod.Logger.Error(e.StackTrace);
             }
+            
         }
 
         // 5. 实际放置逻辑 (参考 SpawnSteleUnderTree 风格)
@@ -174,8 +186,8 @@ namespace Light_and_Shadow.Common.Systems
                 Point16 relPos = tileRelativePositions[i];
                 
                 // 计算世界绝对坐标 = 锚点 + 相对偏移
-                int wx = startX + relPos.X;
-                int wy = startY + relPos.Y;
+                int wx = startX +  relPos.X;
+                int wy = startY +  relPos.Y;
 
                 // 边界检查
                 if (wx >= 0 && wx < Main.maxTilesX && wy >= 0 && wy < Main.maxTilesY)
