@@ -1,4 +1,3 @@
-﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,11 +5,14 @@ using Terraria;
 using Terraria.GameContent.Generation;
 using Terraria.ID;
 using Terraria.ModLoader;
-using Terraria.WorldBuilding;
 using Terraria.ModLoader.IO;
-using Light_and_Shadow.Content;
+using Terraria.ObjectData;
+using Terraria.WorldBuilding;
 using Terraria.DataStructures;
+using Terraria.Enums;
 using ReLogic.OS;
+using Light_and_Shadow.Common;
+using Microsoft.Xna.Framework;
 
 namespace Light_and_Shadow.Common.Systems
 {
@@ -18,22 +20,7 @@ namespace Light_and_Shadow.Common.Systems
     {
         public static List<Point> StructureSpawnPoints = new List<Point>();
 
-        private struct TileData
-        {
-            public int X;
-            public int Y;
-            public ushort TileType;
-            public ushort WallType;
-            public short TileFrameX;
-            public short TileFrameY;
-        }
-
-        private List<TileData> tiles = new List<TileData>();
-        private Dictionary<ushort, ushort> typeMapping = new Dictionary<ushort, ushort>();
-        private int structureWidth = 0;
-        private int structureHeight = 0;
-        private int originX = 0;
-        private int originY = 0;
+        private QoLStructure structure;
         private bool isDataLoaded = false;
 
         public override void ModifyWorldGenTasks(List<GenPass> tasks, ref double totalWeight)
@@ -46,19 +33,19 @@ namespace Light_and_Shadow.Common.Systems
                 {
                     progress.Message = "Placing Tree House";
 
-                    if (!isDataLoaded) 
+                    if (!isDataLoaded)
                     {
                         LoadStructureData();
                     }
 
-                    if (tiles.Count == 0)
+                    if (structure?.StructureDatas == null || structure.StructureDatas.Count == 0)
                     {
                         Mod.Logger.Warn("❌ 没有加载到任何方块数据！");
                         return;
                     }
 
-                    Point spawnPoint = StructureSpawnPoints.Count > 0 
-                        ? StructureSpawnPoints[0] 
+                    Point spawnPoint = StructureSpawnPoints.Count > 0
+                        ? StructureSpawnPoints[0]
                         : new Point(Main.maxTilesX / 2, 100);
 
                     PlaceStructure(spawnPoint.X, spawnPoint.Y);
@@ -77,7 +64,7 @@ namespace Light_and_Shadow.Common.Systems
                 string structureFilePath = Path.Combine(basePath, "tModLoader", "ModSources", Mod.Name, "Structure", "TreeHouse1.qotstruct");
                 string fullPath = Path.GetFullPath(structureFilePath);
 
-                Mod.Logger.Info($"📂 尝试加载: {fullPath}");
+                Mod.Logger.Info($"📂 加载路径: {fullPath}");
 
                 if (!File.Exists(fullPath))
                 {
@@ -85,184 +72,17 @@ namespace Light_and_Shadow.Common.Systems
                     return;
                 }
 
-                TagCompound tag = TagIO.FromFile(fullPath);
+                structure = new QoLStructure(fullPath);
 
-                structureWidth = tag.Get<short>("Width");
-                structureHeight = tag.Get<short>("Height");
-                originX = tag.Get<short>("OriginX");
-                originY = tag.Get<short>("OriginY");
-
-                Mod.Logger.Info($"📐 元数据: Width={structureWidth}, Height={structureHeight}, Origin=({originX},{originY})");
-
-                // 🔑 关键修复：正确读取列表
-                typeMapping.Clear();
-                if (tag.ContainsKey("EntriesName") && tag.ContainsKey("EntriesType"))
+                Mod.Logger.Info($"📐 元数据: Width={structure.Width}, Height={structure.Height}, Origin=({structure.OriginX},{structure.OriginY})");
+                Mod.Logger.Info($"📊 总方块数: {structure.StructureDatas.Count}");
+                Mod.Logger.Info($"📋 Mod方块/墙壁条目: {structure.entries.Count}, typeMaping: {structure.typeMaping.Count}");
+                foreach (var entry in structure.entries)
                 {
-                    var entriesNameList = tag.GetList<string>("EntriesName");
-                    var entriesTypeList = tag.GetList<ushort>("EntriesType");
-
-                    Mod.Logger.Info($"📋 加载方块映射: {entriesNameList.Count} 个Mod方块");
-
-                    for (int i = 0; i < entriesNameList.Count && i < entriesTypeList.Count; i++)
-                    {
-                        string fullName = entriesNameList[i];
-                        ushort typeIndex = entriesTypeList[i];
-
-                        Mod.Logger.Debug($"  处理: {fullName} -> index {typeIndex}");
-
-                        // 判断是方块还是墙壁
-                        if (fullName.EndsWith("t"))  // 方块
-                        {
-                            string modTileName = fullName.Substring(0, fullName.Length - 1);
-                            if (ModContent.TryFind<ModTile>(modTileName, out var modTile))
-                            {
-                                typeMapping[typeIndex] = modTile.Type;
-                                Mod.Logger.Debug($"  ✅ 映射方块: {modTileName} (index {typeIndex}) -> {modTile.Type}");
-                            }
-                            else
-                            {
-                                Mod.Logger.Warn($"  ❌ 未找到Mod方块: {modTileName}");
-                            }
-                        }
-                        else if (fullName.EndsWith("w"))  // 墙壁
-                        {
-                            string modWallName = fullName.Substring(0, fullName.Length - 1);
-                            if (ModContent.TryFind<ModWall>(modWallName, out var modWall))
-                            {
-                                typeMapping[typeIndex] = modWall.Type;
-                                Mod.Logger.Debug($"  ✅ 映射墙壁: {modWallName} (index {typeIndex}) -> {modWall.Type}");
-                            }
-                            else
-                            {
-                                Mod.Logger.Warn($"  ❌ 未找到Mod墙壁: {modWallName}");
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    Mod.Logger.Warn($"⚠️ 找不到 EntriesName/EntriesType");
+                    Mod.Logger.Info($"   条目: {entry.Key} -> {entry.Value}");
                 }
 
-                if (tag.TryGet("StructureData", out object structureObj) && structureObj is System.Collections.IList dataList)
-                {
-                    Mod.Logger.Info($"📊 总方块数: {dataList.Count}");
-
-                    tiles.Clear();
-
-                    int stride = structureHeight + 1;
-                    int processedCount = 0;
-                    int validCount = 0;
-                    int modTileCount = 0;
-
-                    for (int index = 0; index < dataList.Count; index++)
-                    {
-                        if (!(dataList[index] is TagCompound tileTag))
-                            continue;
-
-                        processedCount++;
-
-                        TileDefinition def = TileDefinition.DeserializeData(tileTag);
-
-                        int x = index % stride;
-                        int y = index / stride;
-                        int swappedX = y;
-                        int swappedY = x;
-
-                        int relX = swappedX - originX;
-                        int relY = swappedY - originY;
-
-                        // 转换方块ID
-                        ushort finalTileType = 0;
-                        ushort finalWallType = 0;
-
-                        // 在 LoadStructureData 中，修改这部分：
-
-                        if (def.TileIndex >= 0)
-                        {
-                            // 检查是否在原版方块范围内
-                            if (def.TileIndex < TileID.Count)
-                            {
-                                // 原版方块，直接使用
-                                finalTileType = (ushort)def.TileIndex;
-                            }
-                            else
-                            {
-                                // Mod方块，需要映射
-                                Mod.Logger.Debug($"检测到Mod方块ID: {def.TileIndex} (TileID.Count={TileID.Count})");
-                                
-                                if (typeMapping.TryGetValue((ushort)def.TileIndex, out var mappedType))
-                                {
-                                    finalTileType = mappedType;
-                                    modTileCount++;
-                                    if (index < 50)
-                                    {
-                                        Mod.Logger.Debug($"Index {index}: Mod方块 {def.TileIndex} -> {mappedType}");
-                                    }
-                                }
-                                else
-                                {
-                                    Mod.Logger.Warn($"⚠️ 方块映射失败: {def.TileIndex}");
-                                }
-                            }
-                        }
-
-                        if (def.WallIndex >= 0)
-                        {
-                            // 检查是否在原版墙壁范围内
-                            if (def.WallIndex < WallID.Count)
-                            {
-                                // 原版墙壁，直接使用
-                                finalWallType = (ushort)def.WallIndex;
-                            }
-                            else
-                            {
-                                // Mod墙壁，需要映射
-                                if (typeMapping.TryGetValue((ushort)def.WallIndex, out var mappedType))
-                                {
-                                    finalWallType = mappedType;
-                                }
-                                else
-                                {
-                                    Mod.Logger.Warn($"⚠️ 墙壁映射失败: {def.WallIndex}");
-                                }
-                            }
-                        }
-
-                        tiles.Add(new TileData
-                        {
-                            X = relX,
-                            Y = relY,
-                            TileType = finalTileType,
-                            WallType = finalWallType,
-                            TileFrameX = def.TileFrameX,
-                            TileFrameY = def.TileFrameY
-                        });
-
-                        if (def.TileIndex >= 0 || def.WallIndex >= 0)
-                            validCount++;
-                    }
-
-                    isDataLoaded = true;
-                    Mod.Logger.Info($"✅ 加载完成: {validCount}/{processedCount}");
-                    Mod.Logger.Info($"   Mod方块数: {modTileCount}");
-
-                    if (tiles.Count > 0)
-                    {
-                        int minX = int.MaxValue, maxX = int.MinValue;
-                        int minY = int.MaxValue, maxY = int.MinValue;
-
-                        foreach (var t in tiles)
-                        {
-                            minX = Math.Min(minX, t.X);
-                            maxX = Math.Max(maxX, t.X);
-                            minY = Math.Min(minY, t.Y);
-                            maxY = Math.Max(maxY, t.Y);
-                        }
-
-                        Mod.Logger.Info($"📍 坐标范围: X({minX}~{maxX}) Y({minY}~{maxY})");
-                    }
-                }
+                isDataLoaded = true;
             }
             catch (Exception e)
             {
@@ -276,28 +96,44 @@ namespace Light_and_Shadow.Common.Systems
             Mod.Logger.Info($"🏗️ 开始放置 - 锚点: ({centerX}, {groundY})");
 
             int placedCount = 0;
-            int skippedEmpty = 0;          // 空方块（TileType=0 && WallType=0）
-            int skippedOutOfBounds = 0;    // 超出范围
-            int skippedInvalidTile = 0;    // 无效方块ID
-            int skippedInvalidWall = 0;    // 无效��壁ID
+            int skippedEmpty = 0;
+            int skippedOutOfBounds = 0;
+            int skippedMultiTile = 0;
+            int placedMultiTile = 0;
+            int skippedGetTileData = 0;
+            int skippedStyle = 0;
+            int placeFailed = 0;
 
             int minPlaceX = int.MaxValue, maxPlaceX = int.MinValue;
             int minPlaceY = int.MaxValue, maxPlaceY = int.MinValue;
 
-            for (int i = 0; i < tiles.Count; i++)
-            {
-                TileData tile = tiles[i];
+            int stride = structure.Height + 1;
 
-                int wx = centerX + tile.X;
-                int wy = groundY + tile.Y;
+            // 记录需要在第二遍处理的多格物块索引
+            List<int> multiTileIndices = new List<int>();
+
+            // 第一遍：放置单格物块
+            for (int index = 0; index < structure.StructureDatas.Count; index++)
+            {
+                TileDefinition def = structure.StructureDatas[index];
+
+                int x = index % stride;
+                int y = index / stride;
+                int swappedX = y;
+                int swappedY = x;
+
+                int relX = swappedX - structure.OriginX;
+                int relY = swappedY - structure.OriginY;
+
+                int wx = centerX + relX;
+                int wy = groundY + relY;
 
                 minPlaceX = Math.Min(minPlaceX, wx);
                 maxPlaceX = Math.Max(maxPlaceX, wx);
                 minPlaceY = Math.Min(minPlaceY, wy);
                 maxPlaceY = Math.Max(maxPlaceY, wy);
 
-                // 🔍 调试：详细统计跳过原因
-                if (tile.TileType == 0 && tile.WallType == 0)
+                if (def.TileIndex == -1 && def.WallIndex == -1)
                 {
                     skippedEmpty++;
                     continue;
@@ -309,54 +145,317 @@ namespace Light_and_Shadow.Common.Systems
                     continue;
                 }
 
-                // 检查方块ID是否有效
-                bool hasTile = tile.TileType > 0 && tile.TileType < TileLoader.TileCount;
-                bool hasWall = tile.WallType > 0 && tile.WallType < WallLoader.WallCount;
+                int tileType = structure.ParseTileType(def);
+                int wallType = structure.ParseWallType(def);
+
+                bool hasTile = tileType >= 0 && tileType < TileLoader.TileCount;
+                bool hasWall = wallType >= 0 && wallType < WallLoader.WallCount;
+
+                // 调试：统计每个y坐标的土块数量
+                if (def.TileIndex == 0 || def.TileIndex == 2 || def.TileIndex == 3)
+                {
+                    if (!dirtCountPerY.ContainsKey(wy)) dirtCountPerY[wy] = 0;
+                    dirtCountPerY[wy]++;
+                }
 
                 if (!hasTile && !hasWall)
                 {
-                    if (tile.TileType > 0)
-                        skippedInvalidTile++;
-                    if (tile.WallType > 0)
-                        skippedInvalidWall++;
                     continue;
                 }
 
-                try
+                if (hasTile)
                 {
-                    if (hasTile)
+                    // 检查是否为多格方块
+                    TileObjectData tileObjectData = null;
+                    for (int tryStyle = 0; tryStyle < 16; tryStyle++)
                     {
-                        WorldGen.PlaceTile(wx, wy, tile.TileType, mute: true, forced: true);
-                        
-                        Tile mainTile = Main.tile[wx, wy];
-                        if (mainTile != null && mainTile.HasTile)
+                        try
                         {
-                            mainTile.TileFrameX = tile.TileFrameX;
-                            mainTile.TileFrameY = tile.TileFrameY;
+                            tileObjectData = TileObjectData.GetTileData(tileType, tryStyle, 0);
+                            if (tileObjectData != null)
+                                break;
+                        }
+                        catch
+                        {
+                            continue;
                         }
                     }
 
-                    if (hasWall)
+                    if (tileObjectData != null && (tileObjectData.CoordinateFullWidth > 18 || tileObjectData.CoordinateFullHeight > 18))
                     {
-                        Main.tile[wx, wy].WallType = tile.WallType;
+                        skippedMultiTile++;
+                        multiTileIndices.Add(index); // 记录需要第二遍处理的索引
+                        continue;
                     }
 
-                    placedCount++;
+                    // 计算平台样式
+                    int style = 0;
+                    if (tileObjectData != null && tileType == TileID.Platforms)
+                    {
+                        // 从frame计算平台样式
+                        int num = def.TileFrameX / tileObjectData.CoordinateFullWidth;
+                        int num2 = def.TileFrameY / tileObjectData.CoordinateFullHeight;
+                        int num3 = tileObjectData.StyleWrapLimit;
+                        if (num3 == 0) num3 = 1;
+                        int num4 = (!tileObjectData.StyleHorizontal) ? (num / tileObjectData.StyleLineSkip * num3 + num2) : (num2 / tileObjectData.StyleLineSkip * num3 + num);
+                        style = num4 / tileObjectData.StyleMultiplier;
+                    }
+
+                    // 使用KillTile清除已有方块
+                    WorldGen.KillTile(wx, wy, false, false, true);
+
+                    bool placed = WorldGen.PlaceTile(wx, wy, tileType, mute: true, forced: true, style: style);
+                    if (!placed)
+                    {
+                        placeFailed++;
+                    }
+
+                    // 应用斜坡/半砖属性
+                    ApplyBlockStyle(wx, wy, def);
                 }
-                catch (Exception e)
+
+                if (hasWall)
                 {
-                    Mod.Logger.Debug($"放置失败 at ({wx},{wy}): {e.Message}");
+                    WorldGen.PlaceWall(wx, wy, wallType, true);
+                }
+
+                placedCount++;
+            }
+
+            // 第二遍：只处理第一遍记录的多格物块
+            foreach (int index in multiTileIndices)
+            {
+                try
+                {
+                    TileDefinition def = structure.StructureDatas[index];
+
+                    int x = index % stride;
+                    int y = index / stride;
+                    int swappedX = y;
+                    int swappedY = x;
+
+                int relX = swappedX - structure.OriginX;
+                int relY = swappedY - structure.OriginY;
+
+                int wx = centerX + relX;
+                int wy = groundY + relY;
+
+                int tileType = structure.ParseTileType(def);
+
+                if (tileType < 0 || tileType >= TileLoader.TileCount)
+                    continue;
+
+                if (wx < 0 || wx >= Main.maxTilesX || wy < 0 || wy >= Main.maxTilesY)
+                    continue;
+
+                TileObjectData tileObjectData = null;
+                bool foundData = false;
+
+                // 尝试多个可能的style值
+                for (int tryStyle = 0; tryStyle < 16; tryStyle++)
+                {
+                    try
+                    {
+                        var data = TileObjectData.GetTileData(tileType, tryStyle, 0);
+                        if (data != null)
+                        {
+                            tileObjectData = data;
+                            foundData = true;
+                            break;
+                        }
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                }
+
+                if (!foundData || tileObjectData == null)
+                {
+                    skippedGetTileData++;
+                    continue;
+                }
+
+                int subX = (def.TileFrameX / tileObjectData.CoordinateFullWidth) * tileObjectData.CoordinateFullWidth;
+                int subY = (def.TileFrameY / tileObjectData.CoordinateFullHeight) * tileObjectData.CoordinateFullHeight;
+
+                Tile tempTile = new Tile();
+                tempTile.TileType = (ushort)tileType;
+                tempTile.TileFrameX = (short)subX;
+                tempTile.TileFrameY = (short)subY;
+
+                int style = TileFrameToPlaceStyle(tempTile);
+                if (style < 0)
+                {
+                    skippedStyle++;
+                    continue;
+                }
+
+                subX = def.TileFrameX % tileObjectData.CoordinateFullWidth;
+                subY = def.TileFrameY % tileObjectData.CoordinateFullHeight;
+
+                int direction = tileObjectData.Direction switch
+                {
+                    TileObjectDirection.PlaceLeft => -1,
+                    TileObjectDirection.PlaceRight => 1,
+                    _ => 0
+                };
+
+                if (TileID.Sets.BasicChest[tileType])
+                {
+                    PlaceChestNoSync(wx, wy, (ushort)tileType, false, style);
+                    placedMultiTile++;
+                    continue;
+                }
+
+                if (TileID.Sets.BasicDresser[tileType])
+                {
+                    if (TileHelper.Place3x2NoSyncDresser(wx, wy, (ushort)tileType, style))
+                        placedMultiTile++;
+                    continue;
+                }
+
+                if (TryPlaceMultiTile(wx, wy, tileType, style, direction))
+                {
+                    placedMultiTile++;
+                }
+                }
+                catch (Exception ex)
+                {
+                    Mod.Logger.Warn($"❌ 处理多格物块时出错: {ex.Message}");
                 }
             }
 
             Mod.Logger.Info($"📍 放置范围: X({minPlaceX}~{maxPlaceX}) Y({minPlaceY}~{maxPlaceY})");
             Mod.Logger.Info($"✅ 放置完成");
             Mod.Logger.Info($"   成功: {placedCount}");
+            Mod.Logger.Info($"   多格物块: {placedMultiTile}");
             Mod.Logger.Info($"   空方块: {skippedEmpty}");
             Mod.Logger.Info($"   超出范围: {skippedOutOfBounds}");
-            Mod.Logger.Info($"   无效方块ID: {skippedInvalidTile}");
-            Mod.Logger.Info($"   无效墙壁ID: {skippedInvalidWall}");
+            Mod.Logger.Info($"   跳过(多格待处理): {skippedMultiTile}");
+            Mod.Logger.Info($"   GetTileData失败: {skippedGetTileData}");
+            Mod.Logger.Info($"   Style失败: {skippedStyle}");
+            Mod.Logger.Info($"   放置失败: {placeFailed}");
         }
+
+        private static TileObjectData GetTileData(int tileType, int frameX, int frameY)
+        {
+            if (tileType < 0 || tileType >= TileLoader.TileCount)
+                return null;
+
+            try
+            {
+                var data = TileObjectData.GetTileData(tileType, 0);
+                if (data != null)
+                    return data;
+
+                return TileObjectData.GetTileData(tileType, -1, 0);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        // 应用斜坡、半砖等属性
+        private static void ApplyBlockStyle(int x, int y, TileDefinition def)
+        {
+            if (x < 0 || x >= Main.maxTilesX || y < 0 || y >= Main.maxTilesY)
+                return;
+
+            Tile tile = Main.tile[x, y];
+            if (tile == null || !tile.HasTile)
+                return;
+
+            var blockType = def.BlockType;
+
+            if (blockType == BlockType.HalfBlock)
+            {
+                tile.IsHalfBlock = true;
+            }
+            else if (blockType != BlockType.Solid)
+            {
+                // 斜坡
+                switch (blockType)
+                {
+                    case BlockType.SlopeUpLeft:
+                        tile.Slope = SlopeType.SlopeUpLeft;
+                        break;
+                    case BlockType.SlopeUpRight:
+                        tile.Slope = SlopeType.SlopeUpRight;
+                        break;
+                    case BlockType.SlopeDownLeft:
+                        tile.Slope = SlopeType.SlopeDownLeft;
+                        break;
+                    case BlockType.SlopeDownRight:
+                        tile.Slope = SlopeType.SlopeDownRight;
+                        break;
+                }
+            }
+
+            // 处理促动器
+            if (def.HasActuator)
+            {
+                tile.IsActuated = true;
+            }
+        }
+
+        private static int TileFrameToPlaceStyle(Tile tile)
+        {
+            if (tile == null)
+                return 0;
+
+            int type = tile.TileType;
+            if (type < 0 || type >= TileLoader.TileCount)
+                return 0;
+
+            TileObjectData data;
+            try
+            {
+                data = TileObjectData.GetTileData(type, 0);
+            }
+            catch
+            {
+                // 如果获取失败，返回0作为默认值
+                return 0;
+            }
+
+            if (data == null)
+                return 0;
+
+            int num = tile.TileFrameX / data.CoordinateFullWidth;
+            int num2 = tile.TileFrameY / data.CoordinateFullHeight;
+            int num3 = data.StyleWrapLimit;
+            if (num3 == 0)
+                num3 = 1;
+
+            int styleLineSkip = data.StyleLineSkip;
+            int num4 = (!data.StyleHorizontal) ? (num / styleLineSkip * num3 + num2) : (num2 / styleLineSkip * num3 + num);
+            int num5 = num4 / data.StyleMultiplier;
+
+            return num5;
+        }
+
+        private static bool TryPlaceMultiTile(int x, int y, int tileType, int style, int direction)
+        {
+            if (WorldGen.PlaceTile(x, y, tileType, mute: true, forced: true, style: style))
+            {
+                return true;
+            }
+
+            if (direction != 0)
+            {
+                return WorldGen.PlaceTile(x, y, tileType, mute: true, forced: true, style: style);
+            }
+
+            return false;
+        }
+
+        private static int PlaceChestNoSync(int i, int j, ushort tileType, bool nearSurface, int style)
+        {
+            return WorldGen.PlaceChest(i, j, tileType, nearSurface, style);
+        }
+
         private string GetTerrariaPath()
         {
             if (Platform.IsWindows)
