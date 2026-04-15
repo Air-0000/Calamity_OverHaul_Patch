@@ -49,11 +49,13 @@ namespace Light_and_Shadow.Common.Systems
                         : new Point(Main.maxTilesX / 2, 100);
 
                     // 【自动适配地表】根据X动态获取地面Y
-                    int surfaceY = GetSurfaceGroundY(spawnPoint.X) - 82;
+                    int surfaceY = GetSurfaceGroundY(spawnPoint.X) - 80 ;
 
 
                     int groundY = GetSurfaceGroundY(spawnPoint.X);
-                    if (groundY != (int)Main.worldSurface + 200)
+
+
+                    if (groundY != 200)
                     {
                         Mod.Logger.Info($"✅ 找到纯土块地表，树屋生成于 Y:{groundY}");
                         PlaceStructure(spawnPoint.X, surfaceY);
@@ -114,18 +116,27 @@ namespace Light_and_Shadow.Common.Systems
         private int GetSurfaceGroundY(int x)
         {
             int caveLayerTop = (int)Main.rockLayer;
-            int startY = (int)(Main.worldSurface - 200);//地表上方200格开始
+            int startY = 82 ;
             for (int y = startY; y < caveLayerTop-82; y++)
             {
-                Tile currentTile = Main.tile[x, y];
 
-                if ((currentTile.TileType == TileID.Dirt || currentTile.TileType == TileID.Grass)) // 只接受纯土块地表
+                if (!Main.tile[x, y].HasTile)
+                    continue;
+
+                ushort type = Main.tile[x, y].TileType;
+
+                // 自然地表方块（可自行增删）
+                if (type == TileID.Dirt ||
+                    type == TileID.Grass ||
+                    type == TileID.Stone ||
+                    type == TileID.Sand ||
+                    type == TileID.SnowBlock)
                 {
-                     return y;
+                    return y;
                 }
+
             }
-            // 兜底：世界地表高度
-            return (int)Main.worldSurface + 200;
+            return 200;
         }
 
         private void PlaceStructure(int centerX, int groundY)
